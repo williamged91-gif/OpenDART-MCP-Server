@@ -116,7 +116,6 @@ function makeParser(): XMLParser {
     processEntities: true,
     htmlEntities: true,
     // DART filings include lots of unknown tags; treat all as containers.
-    unpairedTags: ["BR", "br", "IMG", "img", "HR", "hr"],
   });
 }
 
@@ -199,10 +198,12 @@ function renderNodes(nodes: OrderedTree, sectionDepth: number): string {
     }
 
     if (upper === "IMG" || upper === "IMAGE") {
-      // We deliberately drop image binaries; surface only the alt/title.
+      // We deliberately drop image binaries; surface alt/title attributes plus
+      // any caption-like inner text that DART sometimes wraps inside <IMG>.
       const attrs = (node[":@"] as Record<string, string>) || {};
       const alt = attrs["@_TITLE"] || attrs["@_ALT"] || attrs["@_DESC"] || "image";
-      out.push(`*[${alt}]*`);
+      const inner = clean(getText(kids));
+      out.push(inner ? `*[${alt}: ${inner}]*` : `*[${alt}]*`);
       continue;
     }
 
